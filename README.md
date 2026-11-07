@@ -1,9 +1,7 @@
 Muhammad Rafi Trinugraha
-
-
+----------------------------
 Repository (repo) di GitHub adalah tempat penyimpanan proyek yang berisi semua file, folder, dan riwayat perubahan (versi) dari proyek tersebut, sehingga bisa dikelola, dibagikan, dan dikerjakan bersama orang lain.
-
-
+---------------------------------------------------
 1.Menyimpan kode dan file proyek di satu tempat yang terpusat dan aman (cloud), jadi tidak hilang kalau laptop atau server bermasalah.
 2.Mengelola versi (version control). Setiap perubahan tercatat, sehingga kamu bisa melihat riwayatnya atau mengembalikan ke versi sebelumnya kalau ada yang rusak.
 3.Kolaborasi tim. Banyak orang bisa mengerjakan proyek yang sama lewat branch, pull request, dan code review tanpa saling menimpa pekerjaan.
@@ -12,8 +10,7 @@ Repository (repo) di GitHub adalah tempat penyimpanan proyek yang berisi semua f
 6.Pelacakan masalah dan tugas dengan fitur Issues dan Projects.
 7.Otomatisasi dengan GitHub Actions, misalnya untuk testing, build, atau deploy otomatis.
 8.Portofolio dan berbagi karya. Repo public bisa jadi bukti kemampuanmu atau dibagikan sebagai open source.
-
-
+---------------------------------------------------------------------------------------------------------------------
 Judul dan tema kegiatan
 Workshop bertajuk From AI to GitHub: Building with AI, Managing Change with GitHub. Temanya menggabungkan dua hal: membuat dan mengembangkan karya dengan bantuan AI, lalu mengelola perubahan dan kolaborasinya menggunakan GitHub.
 

@@ -9,10 +9,15 @@ Repository (repo) di GitHub adalah tempat penyimpanan proyek yang berisi semua f
 3.Kolaborasi tim. Banyak orang bisa mengerjakan proyek yang sama lewat branch, pull request, dan code review tanpa saling menimpa pekerjaan.
 
 4.Backup dan sinkronisasi antar perangkat. Misalnya kode di laptop bisa ditarik ke server homelab dengan git pull.
+
 5.Dokumentasi proyek lewat README, wiki, dan issues, supaya orang lain (atau dirimu sendiri nanti) paham cara memakai dan menjalankan proyek.
+
 6.Pelacakan masalah dan tugas dengan fitur Issues dan Projects.
+
 7.Otomatisasi dengan GitHub Actions, misalnya untuk testing, build, atau deploy otomatis.
+
 8.Portofolio dan berbagi karya. Repo public bisa jadi bukti kemampuanmu atau dibagikan sebagai open source.
+
 ---------------------------------------------------------------------------------------------------------------------
 Judul dan tema kegiatan
 Workshop bertajuk From AI to GitHub: Building with AI, Managing Change with GitHub. Temanya menggabungkan dua hal: membuat dan mengembangkan karya dengan bantuan AI, lalu mengelola perubahan dan kolaborasinya menggunakan GitHub.

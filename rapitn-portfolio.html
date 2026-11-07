@@ -1,0 +1,790 @@
+<title>rapitn Portfolio</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Syne:wght@600;700;800&display=swap">
+<style>
+/* Layout concept: a 3D viewport. Dark stage, sharp corners, mono HUD labels,
+   Blender-style selection orange as the single accent. Static first; WebGL only on request. */
+:root{
+  --bg:#0d0e12; --bg2:#12141a; --surface:#171920; --surface2:#1e2029; --line:#2a2d38;
+  --fg:#ece8e2; --muted:#9b9ea9; --accent:#ff9a3c; --accent-ink:#1b0f03; --focus:#ffb869;
+  --on-art:#f4f1ec; --art-bg:#0b0c10;
+  --f-display:'Syne',system-ui,sans-serif; --f-body:'Instrument Sans',system-ui,sans-serif; --f-mono:'JetBrains Mono',ui-monospace,Menlo,monospace;
+  color-scheme:dark;
+}
+@media (prefers-color-scheme:light){
+  :root:not([data-theme="dark"]){--bg:#f4f2ef;--bg2:#ebe8e3;--surface:#ffffff;--surface2:#f0ede8;--line:#d8d3cb;--fg:#17181d;--muted:#5b5e69;--accent:#b84b05;--accent-ink:#ffffff;--focus:#b84b05;color-scheme:light}
+}
+:root[data-theme="light"]{--bg:#f4f2ef;--bg2:#ebe8e3;--surface:#ffffff;--surface2:#f0ede8;--line:#d8d3cb;--fg:#17181d;--muted:#5b5e69;--accent:#b84b05;--accent-ink:#ffffff;--focus:#b84b05;color-scheme:light}
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--fg);font:16px/1.6 var(--f-body);min-height:100%}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--bg);z-index:30}
+img,svg{max-width:100%}
+a{color:inherit}
+h1,h2,h3{font-family:var(--f-display);line-height:1.08;margin:0;text-wrap:balance;font-weight:700}
+p{margin:0}
+:focus-visible{outline:2px solid var(--focus);outline-offset:3px}
+.wrap{max-width:78rem;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.mono{font-family:var(--f-mono);font-size:.74rem;letter-spacing:.08em;text-transform:uppercase}
+.muted{color:var(--muted)}
+.skip{position:absolute;left:-999px;top:0;background:var(--accent);color:var(--accent-ink);padding:.6rem 1rem;border:0;font:inherit;z-index:60}
+.skip:focus{left:max(16px,env(safe-area-inset-left,0px));top:calc(env(safe-area-inset-top,0px) + 8px)}
+
+.notice{background:var(--surface2);border-bottom:1px solid var(--line);padding-block:.7rem;color:var(--muted)}
+.notice .wrap{display:flex;gap:.6rem;align-items:baseline}
+.notice b{color:var(--accent);font-weight:500}
+
+header.site{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+header.site .wrap{display:flex;align-items:center;gap:1rem;min-height:3.6rem;flex-wrap:wrap;padding-block:.4rem}
+.logo{font-family:var(--f-display);font-weight:800;font-size:1.35rem;text-decoration:none;letter-spacing:-.02em;display:flex;align-items:center;gap:.55rem}
+.logo i{width:.7rem;height:.7rem;background:var(--accent);display:inline-block;transform:rotate(45deg)}
+nav.main{display:flex;gap:.2rem;margin-left:auto;flex-wrap:wrap;align-items:center}
+nav.main a{padding:.45rem .8rem;text-decoration:none;color:var(--muted);font-size:.92rem;border-bottom:2px solid transparent}
+nav.main a:hover{color:var(--fg)}
+nav.main a[aria-current="page"]{color:var(--fg);border-bottom-color:var(--accent)}
+
+.btn{display:inline-flex;align-items:center;gap:.6rem;border:1px solid var(--line);background:transparent;color:var(--fg);font:500 .95rem var(--f-body);padding:.8rem 1.25rem;cursor:pointer;text-decoration:none;border-radius:2px;transition:background .15s,border-color .15s}
+.btn:hover{border-color:var(--fg)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn.small{padding:.5rem .85rem;font-size:.85rem}
+.btn svg{width:1em;height:1em;fill:currentColor}
+
+/* HERO */
+.hero{position:relative;min-height:calc(100svh - 6.5rem);min-height:min(calc(100svh - 6.5rem),56rem);display:flex;align-items:flex-end;overflow:hidden;isolation:isolate;background:var(--art-bg);color:var(--on-art)}
+.hero-art{position:absolute;inset:0;width:100%;height:100%;z-index:-2}
+.hero::after{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(180deg,rgba(11,12,16,.35) 0%,rgba(11,12,16,0) 35%,rgba(11,12,16,.88) 100%)}
+.hud{position:absolute;inset:0;pointer-events:none}
+.hud .wrap{height:100%;position:relative}
+.hud span,.hud svg{position:absolute;color:rgba(244,241,236,.7)}
+.hud .tl{top:1.1rem;left:max(16px,env(safe-area-inset-left,0px))}
+.hud .tr{top:.9rem;right:max(16px,env(safe-area-inset-right,0px));width:3.2rem;height:3.2rem}
+.hud .br{bottom:1.1rem;right:max(16px,env(safe-area-inset-right,0px));text-align:right}
+.hero-copy{padding-block:3rem 3.2rem;width:100%}
+.hero h1{font-size:clamp(4rem,17vw,12.5rem);font-weight:800;letter-spacing:-.045em;line-height:.88;text-transform:lowercase}
+.hero .role{display:flex;flex-wrap:wrap;gap:.4rem 1.2rem;margin-top:1.2rem;color:rgba(244,241,236,.82)}
+.hero .role b{color:#ff9a3c;font-weight:500}
+.hero .tag{max-width:34rem;margin-top:1rem;color:rgba(244,241,236,.8);font-size:1.05rem}
+.hero .cta{display:flex;flex-wrap:wrap;gap:.8rem;margin-top:1.8rem}
+.hero .btn.ghost{color:var(--on-art);border-color:rgba(244,241,236,.45)}
+.hero .btn.ghost:hover{border-color:var(--on-art);background:rgba(244,241,236,.08)}
+.orbit{stroke-dasharray:3 9;animation:march 14s linear infinite}
+.orbit.b{animation-duration:22s;animation-direction:reverse}
+.floaty{animation:bob 7s ease-in-out infinite}
+@keyframes march{to{stroke-dashoffset:-240}}
+@keyframes bob{50%{transform:translateY(-14px)}}
+
+/* SECTIONS */
+section.band{padding-block:4.5rem}
+.sec-head{display:flex;flex-wrap:wrap;gap:1rem 2rem;align-items:end;justify-content:space-between;margin-bottom:1.8rem}
+.sec-head h2{font-size:clamp(1.9rem,4vw,2.9rem)}
+.eyebrow{color:var(--accent);margin-bottom:.7rem;display:block}
+.filters{display:flex;flex-wrap:wrap;gap:.45rem;margin-bottom:1.6rem}
+.chip{border:1px solid var(--line);background:transparent;color:var(--muted);font:500 .86rem var(--f-body);padding:.5rem .95rem;cursor:pointer;border-radius:2px}
+.chip:hover{color:var(--fg);border-color:var(--muted)}
+.chip[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,19.5rem),1fr));gap:1.4rem 1.2rem}
+.card{display:block;text-decoration:none;color:inherit}
+.card .thumb{display:block;aspect-ratio:4/3;overflow:hidden;background:var(--art-bg);outline:2px solid transparent;outline-offset:0;transition:outline-color .15s}
+.card .thumb svg{display:block;width:100%;height:100%}
+.card:hover .thumb,.card:focus-visible .thumb{outline-color:var(--accent)}
+.card:hover .spin,.card:focus-visible .spin{animation:bob 2.2s ease-in-out infinite}
+.card .cap{display:flex;justify-content:space-between;gap:1rem;align-items:baseline;padding-top:.7rem}
+.card h3{font-size:1.1rem;font-weight:600}
+.card .cat{color:var(--muted);white-space:nowrap}
+.empty{padding:2rem;border:1px dashed var(--line);color:var(--muted)}
+
+/* PROJECT */
+.crumb{display:inline-flex;gap:.5rem;margin:1.6rem 0 1.2rem;color:var(--muted);text-decoration:none}
+.crumb:hover{color:var(--accent)}
+.p-hero{background:var(--art-bg);aspect-ratio:16/8;max-height:34rem;width:100%;overflow:hidden}
+.p-hero svg{width:100%;height:100%;display:block}
+.p-title{display:flex;flex-wrap:wrap;align-items:baseline;gap:.6rem 1.4rem;margin-top:2rem}
+.p-title h1{font-size:clamp(2.2rem,6vw,4.4rem);letter-spacing:-.03em}
+.p-meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(12rem,1fr));gap:1.2rem 2rem;margin:1.8rem 0 0;padding:1.4rem 0;border-block:1px solid var(--line)}
+.p-meta dt{color:var(--muted);margin-bottom:.4rem}
+.p-meta dd{margin:0}
+.sw-list{display:flex;flex-wrap:wrap;gap:.4rem}
+.sw{display:inline-flex;align-items:center;gap:.45rem;font-size:.85rem;padding:.35rem .75rem .35rem .35rem;background:var(--surface2);border:1px solid var(--line);border-radius:2px}
+.sw b{font:500 .68rem var(--f-mono);background:var(--bg);color:var(--accent);padding:.35rem .5rem;border-radius:1px}
+.roles{display:flex;flex-wrap:wrap;gap:.3rem .9rem}
+.p-sec{padding-top:3.2rem}
+.p-sec h2{font-size:1.7rem;margin-bottom:1.1rem}
+.p-sec .lead{max-width:44rem;color:var(--muted);font-size:1.05rem}
+.two{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:2rem}
+.stats{font-family:var(--f-mono);font-size:.82rem;display:grid;gap:.55rem;align-content:start;background:var(--surface);border:1px solid var(--line);padding:1.1rem}
+.stats div{display:flex;justify-content:space-between;gap:1rem;border-bottom:1px solid var(--line);padding-bottom:.5rem}
+.stats div:last-child{border:0;padding:0}
+.stats span:first-child{color:var(--muted)}
+.mood{display:grid;grid-template-columns:repeat(auto-fit,minmax(9rem,1fr));gap:.6rem}
+.mood div{aspect-ratio:1/1;padding:.85rem;display:flex;align-items:end;font:400 .7rem var(--f-mono);color:var(--on-art);text-transform:uppercase;letter-spacing:.06em}
+.palette{display:flex;gap:.5rem;margin-top:.9rem;flex-wrap:wrap}
+.palette span{display:inline-flex;gap:.4rem;align-items:center;font:400 .72rem var(--f-mono);color:var(--muted)}
+.palette i{width:1.1rem;height:1.1rem;border:1px solid var(--line)}
+.tabs{display:flex;gap:.3rem;margin-bottom:1rem;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.tabs button{background:none;border:0;color:var(--muted);font:500 .9rem var(--f-body);padding:.7rem 1rem;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}
+.tabs button[aria-selected="true"]{color:var(--fg);border-bottom-color:var(--accent)}
+.shots{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,17rem),1fr));gap:.8rem}
+.shot{background:var(--art-bg);aspect-ratio:4/3;overflow:hidden;margin:0;position:relative}
+.shot svg{width:100%;height:100%;display:block}
+.shot figcaption{position:absolute;left:.6rem;bottom:.5rem;color:var(--on-art);font:400 .68rem var(--f-mono);letter-spacing:.06em;text-transform:uppercase;opacity:.85}
+.gallery{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.8rem}
+.gallery .shot:first-child{grid-column:1/-1;aspect-ratio:16/8}
+.turn{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:1.4rem;align-items:center}
+.turn .stage{background:var(--art-bg);aspect-ratio:4/3;overflow:hidden}
+.turn .stage svg{width:100%;height:100%;display:block}
+.turn-ctl{display:grid;gap:1rem}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.slot{aspect-ratio:16/8;background:var(--surface);border:1px dashed var(--line);display:grid;place-items:center;color:var(--muted);text-align:center;padding:1rem}
+.viewer{background:var(--art-bg);position:relative;aspect-ratio:16/9;overflow:hidden;color:var(--on-art)}
+.viewer .poster{position:absolute;inset:0}
+.viewer .poster svg{width:100%;height:100%;display:block}
+.viewer canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+.viewer canvas:focus-visible{outline-offset:-4px}
+.v-bar{display:flex;flex-wrap:wrap;gap:.7rem 1rem;align-items:center;margin-top:.9rem}
+.v-bar .status{color:var(--muted);font-size:.88rem;flex:1 1 16rem;min-width:0}
+.pn{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:4rem;padding-top:1.6rem;border-top:1px solid var(--line)}
+.pn a{text-decoration:none;display:block}
+.pn a:last-child{text-align:right}
+.pn h3{font-size:1.3rem;margin-top:.3rem}
+.pn a:hover h3{color:var(--accent)}
+
+/* ABOUT / RES / CONTACT */
+.page-head{padding-block:3.5rem 1rem}
+.page-head h1{font-size:clamp(2.4rem,7vw,5rem);letter-spacing:-.035em}
+.about{display:grid;grid-template-columns:minmax(0,15rem) minmax(0,1fr);gap:2.5rem;align-items:start}
+.avatar{aspect-ratio:1/1;background:var(--art-bg);overflow:hidden}
+.avatar svg{width:100%;height:100%;display:block}
+.prose p{max-width:42rem;color:var(--muted);font-size:1.05rem}
+.prose p+p{margin-top:1rem}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,20rem),1fr));gap:2.4rem 2rem;margin-top:3rem}
+.cols h2{font-size:1.25rem;margin-bottom:1rem}
+.prof{display:grid;gap:.9rem;padding:0;margin:0;list-style:none}
+.prof li{display:grid;gap:.35rem}
+.prof .row{display:flex;justify-content:space-between;font-size:.92rem}
+.bar{height:3px;background:var(--line)}
+.bar i{display:block;height:100%;background:var(--accent)}
+.spec{display:grid;gap:0;margin:0}
+.spec div{display:flex;justify-content:space-between;gap:1rem;padding:.6rem 0;border-bottom:1px solid var(--line);font-size:.92rem}
+.spec dt{color:var(--muted)}
+.spec dd{margin:0;text-align:right}
+.steps{padding:0;margin:0;list-style:none;display:grid;gap:1rem}
+.steps li{display:grid;grid-template-columns:7rem 1fr;gap:1rem;padding-bottom:1rem;border-bottom:1px solid var(--line)}
+.steps .mono{color:var(--accent);padding-top:.25rem}
+.pill{display:inline-flex;align-items:center;gap:.5rem;border:1px solid var(--line);padding:.5rem 1rem;font-size:.88rem;border-radius:2px}
+.dot{width:.55rem;height:.55rem;background:var(--accent);display:inline-block;border-radius:50%}
+.rl{display:grid;gap:0;margin:0;padding:0;list-style:none}
+.rl li{display:flex;justify-content:space-between;gap:1rem;align-items:baseline;padding:.85rem 0;border-bottom:1px solid var(--line)}
+.rl small{color:var(--muted);font-family:var(--f-mono);font-size:.72rem;letter-spacing:.05em;text-transform:uppercase;white-space:nowrap}
+.rl a{text-decoration:none}
+.rl a:hover{color:var(--accent)}
+.budget{margin-top:3rem;border:1px solid var(--line);background:var(--surface);padding:1.4rem}
+.budget h2{font-size:1.25rem;margin-bottom:.8rem}
+.budget ul{margin:0;padding-left:1.1rem;color:var(--muted);display:grid;gap:.4rem}
+.contact-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,21rem),1fr));gap:2rem;margin-top:1.6rem}
+.mail{font-family:var(--f-display);font-size:clamp(1.4rem,4vw,2.3rem);word-break:break-all;margin:.6rem 0 1rem}
+.soc{display:grid;gap:0;padding:0;margin:0;list-style:none}
+.soc li{display:flex;justify-content:space-between;gap:1rem;padding:.85rem 0;border-bottom:1px solid var(--line)}
+.soc a{text-decoration:none}
+.soc a:hover{color:var(--accent)}
+footer.site{border-top:1px solid var(--line);margin-top:4rem;padding-block:2rem;color:var(--muted);font-size:.88rem}
+footer.site .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:1rem}
+
+/* REEL MODAL */
+dialog#reel{background:var(--surface);color:var(--fg);border:1px solid var(--line);padding:0;width:min(66rem,calc(100% - 1.5rem));max-width:none;max-height:calc(100svh - 1.5rem);overflow:auto;border-radius:2px}
+dialog#reel::backdrop{background:rgba(5,6,8,.82)}
+.reel-in{display:grid;grid-template-columns:minmax(0,1.8fr) minmax(0,1fr)}
+.reel-top{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;padding:.8rem 1rem;border-bottom:1px solid var(--line)}
+.reel-top h2{font-size:1.05rem}
+.reel-stage{background:var(--art-bg);position:relative;aspect-ratio:16/9;overflow:hidden;color:var(--on-art)}
+.reel-stage svg{width:100%;height:100%;display:block}
+.reel-stage video,.reel-stage iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#000}
+.reel-hud{position:absolute;left:.8rem;bottom:.7rem;font:400 .78rem var(--f-mono);letter-spacing:.08em;background:rgba(11,12,16,.6);padding:.4rem .7rem}
+.reel-ctl{display:flex;gap:.8rem;align-items:center;padding:.8rem 1rem;border-top:1px solid var(--line)}
+.prog{flex:1;height:3px;background:var(--line);position:relative}
+.prog i{position:absolute;inset:0 auto 0 0;background:var(--accent);width:0}
+.reel-list{padding:1rem;border-left:1px solid var(--line);min-width:0}
+.reel-list h3{font-size:.95rem;margin-bottom:.8rem}
+.reel-list ol{list-style:none;margin:0;padding:0;display:grid;gap:.2rem}
+.reel-list li button{width:100%;text-align:left;background:none;border:0;color:var(--muted);padding:.55rem .6rem;cursor:pointer;display:flex;justify-content:space-between;gap:.8rem;font:inherit;font-size:.9rem;border-left:2px solid transparent}
+.reel-list li button[aria-current="true"]{color:var(--fg);border-left-color:var(--accent);background:var(--surface2)}
+.reel-list li button small{font:400 .68rem var(--f-mono);letter-spacing:.05em;text-transform:uppercase;white-space:nowrap}
+.reel-link{margin-top:1rem;display:inline-block}
+
+[hidden]{display:none!important}
+@media (max-width:760px){
+  section.band{padding-block:3rem}
+  .two,.turn,.about,.reel-in{grid-template-columns:minmax(0,1fr)}
+  .reel-list{border-left:0;border-top:1px solid var(--line)}
+  .about{gap:1.5rem}
+  .avatar{max-width:12rem}
+  .steps li{grid-template-columns:1fr;gap:.3rem}
+  .p-hero{aspect-ratio:4/3}
+  .gallery .shot:first-child{aspect-ratio:4/3}
+  nav.main{margin-left:0;width:100%}
+  .hud .tr{display:none}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+}
+</style>
+
+<button class="skip" type="button" id="skip">Skip to content</button>
+<div class="notice mono"><div class="wrap"><b>Sample content</b><span>Artwork is generated in your browser. Swap in your renders in the CONFIG block.</span></div></div>
+
+<header class="site">
+  <div class="wrap">
+    <a class="logo" href="#home" aria-label="rapitn, home"><i aria-hidden="true"></i>rapitn</a>
+    <nav class="main" aria-label="Main">
+      <a href="#work" data-nav="work">Work</a>
+      <a href="#about" data-nav="about">About</a>
+      <a href="#resources" data-nav="resources">Resources</a>
+      <a href="#contact" data-nav="contact">Contact</a>
+      <button class="btn small" type="button" data-act="open-reel"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9-5.5z"/></svg>Showreel</button>
+    </nav>
+  </div>
+</header>
+
+<main id="main" tabindex="-1">
+  <div id="view-home" data-view="home">
+    <section class="hero" aria-label="Introduction">
+      <svg class="hero-art" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false">
+        <defs>
+          <radialGradient id="h-bg" cx=".68" cy=".42" r=".75"><stop offset="0" stop-color="#2a1c14"/><stop offset=".55" stop-color="#14131a"/><stop offset="1" stop-color="#0b0c10"/></radialGradient>
+          <radialGradient id="h-orb" cx=".34" cy=".3" r=".85"><stop offset="0" stop-color="#ffd2a0"/><stop offset=".35" stop-color="#ff9a3c"/><stop offset=".8" stop-color="#7a2c0a"/><stop offset="1" stop-color="#2b0e05"/></radialGradient>
+          <radialGradient id="h-glow" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#ff9a3c" stop-opacity=".35"/><stop offset="1" stop-color="#ff9a3c" stop-opacity="0"/></radialGradient>
+          <linearGradient id="h-floor" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff9a3c" stop-opacity="0"/><stop offset="1" stop-color="#ff9a3c" stop-opacity=".22"/></linearGradient>
+        </defs>
+        <rect width="1600" height="900" fill="url(#h-bg)"/>
+        <g stroke="url(#h-floor)" stroke-width="1" fill="none">
+          <path d="M0 640H1600M0 700H1600M0 780H1600M0 880H1600"/>
+          <path d="M800 560L-400 900M800 560L-100 900M800 560L300 900M800 560L650 900M800 560L950 900M800 560L1300 900M800 560L1700 900M800 560L2000 900"/>
+        </g>
+        <circle cx="1090" cy="380" r="330" fill="url(#h-glow)"/>
+        <ellipse cx="1090" cy="690" rx="190" ry="26" fill="#000" opacity=".5"/>
+        <g class="floaty">
+          <circle cx="1090" cy="380" r="170" fill="url(#h-orb)"/>
+          <ellipse class="orbit" cx="1090" cy="380" rx="290" ry="74" fill="none" stroke="#f4f1ec" stroke-opacity=".55" transform="rotate(-18 1090 380)"/>
+          <ellipse class="orbit b" cx="1090" cy="380" rx="238" ry="228" fill="none" stroke="#ff9a3c" stroke-opacity=".6" transform="rotate(32 1090 380)"/>
+          <circle cx="1328" cy="326" r="7" fill="#f4f1ec"/>
+        </g>
+      </svg>
+      <div class="hud" aria-hidden="true">
+        <div class="wrap">
+          <span class="mono tl">Perspective &middot; Solid</span>
+          <svg class="tr" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M24 24V6M24 24l15 9M24 24L9 33"/><circle cx="24" cy="6" r="3" fill="#7bd88f" stroke="none"/><circle cx="39" cy="33" r="3" fill="#ff6b6b" stroke="none"/><circle cx="9" cy="33" r="3" fill="#6ba8ff" stroke="none"/></svg>
+          <span class="mono br">Frame <b id="frame">0001</b> / 0240<br>24 fps</span>
+        </div>
+      </div>
+      <div class="wrap">
+        <div class="hero-copy">
+          <h1>rapitn</h1>
+          <p class="role mono"><b>3D Artist</b><span>Animator</span><span>Character &middot; Environment &middot; Product &middot; Motion</span></p>
+          <p class="tag">Renders built for the screen they land on. Modeling, lookdev, lighting and animation from blockout to final frame.</p>
+          <div class="cta">
+            <button class="btn primary" type="button" data-act="explore">Explore Work <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2v9.2L4.4 7.6 3.3 8.7 8 13.4l4.7-4.7-1.1-1.1L8 11.2V2z"/></svg></button>
+            <button class="btn ghost" type="button" data-act="open-reel"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9-5.5z"/></svg>Play showreel</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="band" id="work-grid" aria-labelledby="work-h">
+      <div class="wrap">
+        <div class="sec-head">
+          <div><span class="eyebrow mono">Selected work</span><h2 id="work-h">Projects</h2></div>
+          <p class="muted mono" id="count" role="status" aria-live="polite"></p>
+        </div>
+        <div class="filters" role="group" aria-label="Filter by category" id="filters"></div>
+        <div class="grid" id="grid"></div>
+      </div>
+    </section>
+  </div>
+
+  <div id="view-project" data-view="project" hidden></div>
+  <div id="view-about" data-view="about" hidden></div>
+  <div id="view-resources" data-view="resources" hidden></div>
+  <div id="view-contact" data-view="contact" hidden></div>
+</main>
+
+<footer class="site">
+  <div class="wrap">
+    <span>&copy; 2026 rapitn. All renders belong to their artist.</span>
+    <span class="mono">Static gallery first. 3D loads only on request.</span>
+  </div>
+</footer>
+
+<dialog id="reel" aria-labelledby="reel-h">
+  <div class="reel-in">
+    <div class="reel-top">
+      <h2 id="reel-h">Showreel</h2>
+      <button class="btn small" type="button" id="reel-close" aria-label="Close showreel">Close <span aria-hidden="true">&times;</span></button>
+    </div>
+    <div>
+      <div class="reel-stage" id="reel-stage"></div>
+      <div class="reel-ctl" id="reel-ctl">
+        <button class="btn small" type="button" id="reel-toggle" aria-label="Pause showreel">Pause</button>
+        <div class="prog" aria-hidden="true"><i id="reel-prog"></i></div>
+        <span class="mono" id="reel-total"></span>
+      </div>
+    </div>
+    <aside class="reel-list">
+      <h3>Featured in this reel</h3>
+      <ol id="reel-list"></ol>
+      <a class="reel-link btn small" id="reel-ext" href="#" target="_blank" rel="noopener" hidden>Watch full reel</a>
+    </aside>
+  </div>
+</dialog>
+
+<script>
+/* =========================================================
+   CONFIG: edit this block. Everything on the page reads from it.
+   - No production credits are invented. Entries below are samples.
+   - reel.embedUrl: a Vimeo/YouTube embed URL. Iframes to other sites are blocked
+     inside Claude artifacts, so this works once the page is hosted on your own site.
+     Until then the reel shows a generated preview, or reel.videoSrc if you set one.
+   - projects[].modelUrl: path to an approved, compressed .glb (Draco or Meshopt).
+     Without it, the viewer shows a labeled placeholder shape.
+   ========================================================= */
+const CONFIG = {
+  reel: { embedUrl: '', videoSrc: '', externalUrl: '', secondsPerProject: 2.6 },
+  email: 'your@email.com',
+  status: { open: true, label: 'Open for commissions', note: 'Typical start within 3 to 4 weeks. Rate sheet sent on request.' },
+  socials: [
+    { name: 'ArtStation', handle: '@rapitn', url: '' },
+    { name: 'Behance', handle: '@rapitn', url: '' },
+    { name: 'Instagram', handle: '@rapitn', url: '' },
+    { name: 'Discord', handle: 'rapitn community', url: '' }
+  ],
+  bio: [
+    'Sample bio. Replace this with two or three short paragraphs about your background, the kind of work you want more of, and how you like to collaborate.',
+    'Keep it specific: studios, schools, or personal milestones that shaped how you work.'
+  ],
+  availableFor: ['Freelance', 'Full-time', 'Collaborations'],
+  software: [
+    { name: 'Blender', level: 90, tag: 'Advanced' },
+    { name: 'Substance 3D Painter', level: 75, tag: 'Proficient' },
+    { name: 'ZBrush', level: 65, tag: 'Proficient' },
+    { name: 'After Effects', level: 60, tag: 'Working' },
+    { name: 'Houdini', level: 30, tag: 'Learning' }
+  ],
+  hardware: [
+    ['CPU', '8-core desktop processor'], ['GPU', '12 GB VRAM, RTX-class'], ['Memory', '64 GB'],
+    ['Storage', '2 TB NVMe + 4 TB scratch'], ['Display', '27 in 4K, calibrated sRGB'], ['Input', 'Pen tablet, 3D mouse']
+  ],
+  process: [
+    ['Brief', 'Goals, audience, deliverables and a reference pass before any geometry.'],
+    ['Blockout', 'Proportions and silhouette in grey. Approved before detail.'],
+    ['Model and UV', 'Clean topology, deliberate texel density, wireframe checks.'],
+    ['Lookdev', 'Materials and lighting tests in clay first, then color.'],
+    ['Animate', 'Blocking, spline, polish. Turntable and breakdown on request.'],
+    ['Render and grade', 'Final frames, compositing, delivery in the formats you need.']
+  ],
+  learning: ['Houdini procedural environments', 'Geometry Nodes for motion loops', 'Real-time lookdev in glTF'],
+  resources: {
+    models: [
+      ['Sample prop pack', 'GLB, 4 MB', 'CC0'], ['Studio light rig', 'BLEND, 1 MB', 'CC0'], ['Hard-surface trim sheet', 'PNG, 6 MB', 'CC-BY']
+    ],
+    tutorials: [
+      ['Clay render lighting in five steps', 'Video'], ['Retopology that survives animation', 'Video'], ['UV layouts for texel-density control', 'Article']
+    ],
+    posts: [
+      ['Why every project starts in clay', 'Blog'], ['Budgeting render time on a laptop', 'Blog'], ['Shipping a GLB under 5 MB', 'Blog']
+    ]
+  },
+  projects: [
+    { slug: 'ember-courier', title: 'Ember Courier', cat: 'Character Design', cats: ['Character Design', 'Personal Projects'], year: 2026, client: 'Personal project', software: ['Blender', 'ZBrush', 'Substance 3D Painter'], roles: ['Modeling', 'Texturing', 'Lighting'], hue: 24, kind: 'orb', breakdown: true,
+      overview: 'Sample entry. A stylized courier character, from silhouette blockout to a lit hero frame. Use this space to explain the brief, the constraints and the decision that shaped the final look.', stats: [['Renderer', 'Cycles'], ['Samples', '512'], ['Resolution', '3840 x 2160'], ['Polycount', '48k tris']] },
+    { slug: 'drowned-atrium', title: 'Drowned Atrium', cat: 'Environment Art', cats: ['Environment Art'], year: 2026, client: 'Personal project', software: ['Blender', 'Substance 3D Painter', 'Houdini'], roles: ['Modeling', 'Texturing', 'Lighting'], hue: 190, kind: 'arch',
+      overview: 'Sample entry. A flooded atrium lit by a single skylight. Describe the reference, the modular kit and how the light was staged.', stats: [['Renderer', 'Cycles'], ['Samples', '768'], ['Resolution', '4096 x 2048'], ['Kit pieces', '34']] },
+    { slug: 'field-radio-01', title: 'Field Radio 01', cat: 'Product Visualization', cats: ['Product Visualization'], year: 2025, client: 'Sample client', software: ['Blender', 'Substance 3D Painter'], roles: ['Modeling', 'Texturing', 'Lighting', 'Animation'], hue: 210, kind: 'cube', breakdown: true,
+      overview: 'Sample entry. A hard-surface product shot with a turntable. Replace the client line with a real one only if you have permission to name them.', stats: [['Renderer', 'Cycles'], ['Samples', '1024'], ['Resolution', '3000 x 3000'], ['Turntable', '120 frames']] },
+    { slug: 'loop-study-07', title: 'Loop Study 07', cat: 'Motion Graphics', cats: ['Motion Graphics', 'Personal Projects'], year: 2026, client: 'Personal project', software: ['Blender', 'After Effects'], roles: ['Animation', 'Lighting'], hue: 300, kind: 'ring',
+      overview: 'Sample entry. A seamless 10 second loop built from simple forms and careful timing.', stats: [['Renderer', 'Eevee'], ['Frame rate', '24 fps'], ['Length', '240 frames'], ['Output', 'MP4 + GIF']] },
+    { slug: 'lantern-moth', title: 'Lantern Moth', cat: 'Character Design', cats: ['Character Design'], year: 2025, client: 'Sample client', software: ['ZBrush', 'Blender'], roles: ['Modeling', 'Texturing'], hue: 48, kind: 'knot',
+      overview: 'Sample entry. A creature design exploring translucent wings and soft emissive detail.', stats: [['Renderer', 'Cycles'], ['Samples', '640'], ['Resolution', '3840 x 2160'], ['Polycount', '62k tris']] },
+    { slug: 'basalt-terrace', title: 'Basalt Terrace', cat: 'Environment Art', cats: ['Environment Art'], year: 2025, client: 'Personal project', software: ['Blender', 'Houdini'], roles: ['Modeling', 'Lighting'], hue: 150, kind: 'pillars',
+      overview: 'Sample entry. A column-field environment built with a procedural scatter setup.', stats: [['Renderer', 'Cycles'], ['Samples', '512'], ['Resolution', '4096 x 2048'], ['Instances', '1,800']] },
+    { slug: 'brushed-kettle', title: 'Brushed Kettle', cat: 'Product Visualization', cats: ['Product Visualization'], year: 2025, client: 'Sample client', software: ['Blender', 'Substance 3D Painter'], roles: ['Modeling', 'Texturing', 'Lighting'], hue: 8, kind: 'orb',
+      overview: 'Sample entry. Studio lighting study for a brushed-metal kitchen product.', stats: [['Renderer', 'Cycles'], ['Samples', '900'], ['Resolution', '3000 x 3000'], ['Shots', '6']] },
+    { slug: 'night-market-stall', title: 'Night Market Stall', cat: 'Environment Art', cats: ['Environment Art', 'Personal Projects'], year: 2024, client: 'Personal project', software: ['Blender', 'Substance 3D Painter'], roles: ['Modeling', 'Texturing', 'Lighting'], hue: 275, kind: 'pillars',
+      overview: 'Sample entry. A small night scene lit entirely by practical lights.', stats: [['Renderer', 'Cycles'], ['Samples', '1024'], ['Resolution', '3840 x 2160'], ['Lights', '22 practicals']] },
+    { slug: 'clay-study-series', title: 'Clay Study Series', cat: 'Personal Projects', cats: ['Personal Projects'], year: 2026, client: 'Personal project', software: ['Blender', 'ZBrush'], roles: ['Modeling', 'Lighting'], hue: 35, kind: 'cube',
+      overview: 'Sample entry. A weekly series of one-hour form studies, rendered in plain clay.', stats: [['Renderer', 'Eevee'], ['Time box', '60 min'], ['Studies', '24'], ['Output', 'PNG']] }
+  ]
+};
+const CATEGORIES = ['All Work', 'Character Design', 'Environment Art', 'Product Visualization', 'Motion Graphics', 'Personal Projects'];
+const THREE_BASE = 'https://cdn.jsdelivr.net/npm/three@0.147.0/';
+const SRC = { three: THREE_BASE + 'build/three.min.js', controls: THREE_BASE + 'examples/js/controls/OrbitControls.js', gltf: THREE_BASE + 'examples/js/loaders/GLTFLoader.js' };
+const RM = window.matchMedia('(prefers-reduced-motion: reduce)');
+const $ = (s, r) => (r || document).querySelector(s);
+const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
+const bySlug = s => CONFIG.projects.find(p => p.slug === s);
+
+/* ---------- generated artwork (stand-in for renders) ---------- */
+let gid = 0;
+function art(p, mode, angle) {
+  mode = mode || 'final'; angle = angle || 0;
+  const id = 'a' + (gid++), h = p.hue;
+  const clay = mode === 'clay', wire = mode === 'wire', lit = mode === 'light';
+  const c1 = clay ? '#cfccc6' : 'hsl(' + h + ' 85% 66%)';
+  const c2 = clay ? '#55534f' : 'hsl(' + ((h + 24) % 360) + ' 70% 26%)';
+  const cA = clay ? '#a9a6a0' : 'hsl(' + h + ' 70% 52%)';
+  const cB = clay ? '#7b7873' : 'hsl(' + h + ' 70% 36%)';
+  const cC = clay ? '#55524e' : 'hsl(' + h + ' 70% 22%)';
+  const stroke = wire ? 'hsl(' + h + ' 90% 70%)' : 'none';
+  const fill = wire ? 'url(#' + id + 'p)' : 'url(#' + id + 'f)';
+  const sx = 1 - 0.22 * Math.abs(Math.sin(angle * Math.PI / 12));
+  const sh = Math.cos(angle * Math.PI / 6) * 0.1;
+  let defs = '<radialGradient id="' + id + 'b" cx=".5" cy=".42" r=".75"><stop offset="0" stop-color="hsl(' + h + ' 38% ' + (lit ? 26 : 19) + '%)"/><stop offset="1" stop-color="#0b0c10"/></radialGradient>'
+    + '<radialGradient id="' + id + 'f" cx="' + (0.34 + sh) + '" cy=".3" r=".85"><stop offset="0" stop-color="' + c1 + '"/><stop offset="1" stop-color="' + c2 + '"/></radialGradient>'
+    + '<linearGradient id="' + id + 'l" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="' + cA + '"/><stop offset="1" stop-color="' + cC + '"/></linearGradient>'
+    + '<pattern id="' + id + 'p" width="14" height="14" patternUnits="userSpaceOnUse" patternTransform="rotate(30)"><path d="M0 0H14M0 0V14M0 14L14 0" stroke="' + stroke + '" stroke-opacity=".55" stroke-width=".8" fill="none"/></pattern>'
+    + '<linearGradient id="' + id + 'c" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".22"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>';
+  let body = '';
+  const k = p.kind, st = wire ? ' stroke="' + stroke + '" stroke-width="1.4"' : '';
+  const ground = '<ellipse cx="200" cy="254" rx="92" ry="11" fill="#000" opacity=".5"/>';
+  if (k === 'orb') body = ground + '<circle class="spin" cx="200" cy="146" r="86" fill="' + fill + '"' + st + '/>';
+  else if (k === 'ring') body = ground + '<g class="spin">' + (wire
+    ? [0, 1, 2, 3, 4].map(i => '<ellipse cx="200" cy="146" rx="' + (96 + i * 7) + '" ry="' + (36 + i * 6) + '" fill="none" stroke="' + stroke + '" stroke-width="1.2" transform="rotate(-18 200 146)"/>').join('')
+    : '<ellipse cx="200" cy="146" rx="108" ry="46" fill="none" stroke="url(#' + id + 'f)" stroke-width="34" transform="rotate(-18 200 146)"/>') + '</g>';
+  else if (k === 'knot') body = ground + '<g class="spin" fill="none" stroke="' + (wire ? stroke : 'url(#' + id + 'f)') + '" stroke-width="' + (wire ? 1.4 : 18) + '">'
+    + [0, 60, 120].map(a => '<ellipse cx="200" cy="146" rx="98" ry="44" transform="rotate(' + (a + angle * 6) + ' 200 146)"/>').join('') + '</g>';
+  else if (k === 'cube') body = ground + '<g class="spin"><polygon points="200,66 292,114 200,162 108,114" fill="' + (wire ? fill : cA) + '"' + st + '/><polygon points="108,114 200,162 200,254 108,206" fill="' + (wire ? fill : cB) + '"' + st + '/><polygon points="292,114 200,162 200,254 292,206" fill="' + (wire ? fill : cC) + '"' + st + '/></g>';
+  else if (k === 'pillars') body = ground + '<g class="spin">' + [[104, 150], [172, 200], [240, 120]].map(a => '<rect x="' + a[0] + '" y="' + (252 - a[1]) + '" width="58" height="' + a[1] + '" fill="' + (wire ? fill : 'url(#' + id + 'l)') + '"' + st + '/>').join('') + '</g>';
+  else body = ground + '<g class="spin"><path d="M116 252V138A84 84 0 0 1 284 138V252Z" fill="' + (wire ? fill : 'url(#' + id + 'l)') + '"' + st + '/><path d="M156 252V142A44 44 0 0 1 244 142V252Z" fill="' + (wire ? 'none' : '#0b0c10') + '"' + st + ' opacity="' + (wire ? 1 : .9) + '"/></g>';
+  const cone = lit ? '<polygon points="40,0 150,0 330,300 120,300" fill="#fff" opacity=".07"/><circle cx="64" cy="22" r="6" fill="#fff"/>' : '';
+  return '<svg viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice" role="img" aria-label="' + p.title + ', ' + mode + ' view"><defs>' + defs + '</defs><rect width="400" height="300" fill="url(#' + id + 'b)"/>' + cone
+    + '<g transform="translate(200 0) scale(' + sx.toFixed(3) + ' 1) translate(-200 0)">' + body + '</g>'
+    + (mode === 'final' ? '<rect width="400" height="300" fill="url(#' + id + 'c)" opacity=".3"/>' : '') + '</svg>';
+}
+function swatches(p) {
+  const hs = [p.hue, p.hue + 24, p.hue - 20, p.hue + 150, p.hue + 40, p.hue + 190].map(v => (v + 360) % 360);
+  const tiles = hs.map((h, i) => '<div style="background:linear-gradient(' + (130 + i * 35) + 'deg,hsl(' + h + ' 55% ' + (20 + i * 2) + '%),hsl(' + ((h + 30) % 360) + ' 50% 10%))">Ref' + String(i + 1).padStart(2, '0') + '</div>').join('');
+  const chips = [0, 1, 2, 3, 4].map(i => { const h = hs[i % 6]; const hex = hsl2hex(h, 60, 30 + i * 9); return '<span><i style="background:' + hex + '"></i>' + hex + '</span>'; }).join('');
+  return '<div class="mood">' + tiles + '</div><div class="palette">' + chips + '</div>';
+}
+function hsl2hex(h, s, l) { s /= 100; l /= 100; const a = s * Math.min(l, 1 - l); const f = n => { const k = (n + h / 30) % 12; const c = l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1)); return Math.round(255 * c).toString(16).padStart(2, '0'); }; return '#' + f(0) + f(8) + f(4); }
+const SW = { 'Blender': 'Bl', 'Maya': 'Ma', 'Cinema 4D': 'C4', 'ZBrush': 'ZB', 'Substance 3D Painter': 'SP', 'After Effects': 'Ae', 'Houdini': 'Hd', 'Unreal Engine': 'UE' };
+const swBadge = n => '<span class="sw"><b aria-hidden="true">' + (SW[n] || n.slice(0, 2)) + '</b>' + n + '</span>';
+
+/* ---------- home: filters + grid ---------- */
+let activeCat = 'All Work';
+function renderFilters() {
+  $('#filters').innerHTML = CATEGORIES.map(c => '<button class="chip" type="button" data-act="filter" data-cat="' + c + '" aria-pressed="' + (c === activeCat) + '">' + c + '</button>').join('');
+}
+function renderGrid() {
+  const list = CONFIG.projects.filter(p => activeCat === 'All Work' || p.cats.includes(activeCat));
+  $('#grid').innerHTML = list.length ? list.map(p => '<a class="card" href="#project-' + p.slug + '"><span class="thumb">' + art(p) + '</span><span class="cap"><h3>' + p.title + '</h3><span class="cat mono">' + p.cat + '</span></span></a>').join('')
+    : '<p class="empty">No projects in this category yet.</p>';
+  $('#count').textContent = list.length + (list.length === 1 ? ' project' : ' projects') + (activeCat === 'All Work' ? '' : ' in ' + activeCat);
+}
+
+/* ---------- project page ---------- */
+let curProject = null, turnTimer = 0;
+function renderProject(p) {
+  const i = CONFIG.projects.indexOf(p), prev = CONFIG.projects[(i + CONFIG.projects.length - 1) % CONFIG.projects.length], next = CONFIG.projects[(i + 1) % CONFIG.projects.length];
+  const wipTabs = [['wire', 'Wireframe'], ['clay', 'Clay'], ['light', 'Lighting tests']];
+  const wipPanel = m => [0, 3, 6].map((a, j) => '<figure class="shot">' + art(p, m, a) + '<figcaption>' + (m === 'wire' ? 'Wire' : m === 'clay' ? 'Clay' : 'Light test') + ' ' + (j + 1) + '</figcaption></figure>').join('');
+  const gallery = [0, 4, 8, 2].map((a, j) => '<figure class="shot">' + art(p, 'final', a) + '<figcaption>Angle ' + (j + 1) + '</figcaption></figure>').join('');
+  $('#view-project').innerHTML =
+    '<div class="wrap">' +
+    '<a class="crumb mono" href="#work">&larr; All work</a>' +
+    '<div class="p-hero">' + art(p, 'final', 0) + '</div>' +
+    '<div class="p-title"><h1>' + p.title + '</h1><span class="mono muted">' + p.year + ' &middot; ' + p.cat + '</span></div>' +
+    '<dl class="p-meta"><div><dt class="mono">Client</dt><dd>' + p.client + '</dd></div><div><dt class="mono">Role</dt><dd><span class="roles">' + p.roles.map(r => '<span>' + r + '</span>').join('') + '</span></dd></div><div><dt class="mono">Software</dt><dd><span class="sw-list">' + p.software.map(swBadge).join('') + '</span></dd></div></dl>' +
+
+    '<section class="p-sec"><h2>Overview</h2><div class="two"><p class="lead">' + p.overview + '</p><div class="stats" aria-label="Render notes">' + p.stats.map(s => '<div><span>' + s[0] + '</span><span>' + s[1] + '</span></div>').join('') + '</div></div></section>' +
+
+    '<section class="p-sec"><h2>Concept and reference</h2>' + swatches(p) + '</section>' +
+
+    '<section class="p-sec"><h2>Work in progress</h2><div class="tabs" role="tablist" aria-label="Work in progress stages">' +
+      wipTabs.map((t, j) => '<button type="button" role="tab" id="tab-' + t[0] + '" aria-controls="panel-' + t[0] + '" aria-selected="' + (j === 0) + '" tabindex="' + (j === 0 ? 0 : -1) + '" data-act="wip" data-m="' + t[0] + '">' + t[1] + '</button>').join('') + '</div>' +
+      wipTabs.map((t, j) => '<div class="shots" role="tabpanel" id="panel-' + t[0] + '" aria-labelledby="tab-' + t[0] + '"' + (j ? ' hidden' : '') + '>' + wipPanel(t[0]) + '</div>').join('') + '</section>' +
+
+    '<section class="p-sec"><h2>Final renders</h2><div class="gallery">' + gallery + '</div></section>' +
+
+    '<section class="p-sec"><h2>Turntable</h2><div class="turn"><div class="stage" id="turn-stage" aria-live="off"></div><div class="turn-ctl"><p class="muted">Drag the slider to step through twelve angles, or press play.</p>' +
+      '<label class="mono" for="turn-range">Angle</label><input id="turn-range" type="range" min="0" max="11" value="0"><div><button class="btn small" type="button" id="turn-toggle" data-act="turn">Play</button></div></div></div></section>' +
+
+    (p.breakdown ? '<section class="p-sec"><h2>Breakdown</h2><div class="slot"><div><p>Breakdown video slot</p><p class="muted mono" style="margin-top:.4rem">Add a video file or embed for this project</p></div></div></section>' : '') +
+
+    '<section class="p-sec"><h2>View in 3D</h2><div class="viewer" id="v-stage"><div class="poster" id="v-poster">' + art(p, 'final', 2) + '</div></div>' +
+      '<div class="v-bar"><button class="btn primary small" type="button" id="v-open" data-act="v-open">View in 3D</button>' +
+      '<button class="btn small" type="button" id="v-reset" data-act="v-reset" hidden>Reset camera</button>' +
+      '<button class="btn small" type="button" id="v-close" data-act="v-close" hidden>Back to still</button>' +
+      '<p class="status" id="v-status" role="status" aria-live="polite">The still image above and the description at the top show this project without 3D. Press View in 3D to load an interactive model.</p></div>' +
+      '<p class="muted mono" id="v-keys" style="margin-top:.6rem" hidden>Drag to orbit &middot; Arrow keys orbit &middot; + / - zoom &middot; R resets</p></section>' +
+
+    '<nav class="pn" aria-label="More projects"><a href="#project-' + prev.slug + '"><span class="mono muted">&larr; Previous</span><h3>' + prev.title + '</h3></a><a href="#project-' + next.slug + '"><span class="mono muted">Next &rarr;</span><h3>' + next.title + '</h3></a></nav>' +
+    '</div>';
+  curProject = p; setupTurn(p);
+}
+function setupTurn(p) {
+  const frames = Array.from({ length: 12 }, (_, a) => art(p, 'final', a));
+  const stage = $('#turn-stage'), range = $('#turn-range');
+  let idx = 0;
+  const show = n => { idx = (n + 12) % 12; stage.innerHTML = frames[idx]; range.value = idx; };
+  show(0);
+  range.addEventListener('input', () => show(+range.value));
+  window.__turn = { show: () => show(idx + 1), get idx() { return idx; } };
+}
+function toggleTurn() {
+  const b = $('#turn-toggle');
+  if (turnTimer) { clearInterval(turnTimer); turnTimer = 0; b.textContent = 'Play'; return; }
+  turnTimer = setInterval(window.__turn.show, 110); b.textContent = 'Pause';
+}
+
+/* ---------- Three.js viewer: loaded only after "View in 3D" ---------- */
+let viewer = null, viewerBusy = false;
+const loaded = {};
+function loadScript(src) {
+  return loaded[src] || (loaded[src] = new Promise((res, rej) => {
+    const s = document.createElement('script'); s.src = src; s.onload = res;
+    s.onerror = () => { delete loaded[src]; rej(new Error('load failed')); };
+    document.head.appendChild(s);
+  }));
+}
+function webglOK() {
+  try { const c = document.createElement('canvas'); return !!(window.WebGLRenderingContext && (c.getContext('webgl2') || c.getContext('webgl'))); } catch (e) { return false; }
+}
+function vStatus(t) { const s = $('#v-status'); if (s) s.textContent = t; }
+function vFallback(msg) {
+  const poster = $('#v-poster'); if (poster) poster.hidden = false;
+  const cv = $('#v-stage canvas'); if (cv) cv.hidden = true;
+  vStatus(msg + ' The still image and project description remain available.');
+  const o = $('#v-open'); if (o) { o.hidden = false; o.disabled = false; }
+  const r = $('#v-reset'), c = $('#v-close'), k = $('#v-keys'); if (r) r.hidden = true; if (c) c.hidden = true; if (k) k.hidden = true;
+}
+async function startViewer(p) {
+  if (viewer || viewerBusy) return;
+  viewerBusy = true;
+  const openBtn = $('#v-open'); openBtn.disabled = true; vStatus('Loading the 3D viewer...');
+  if (!webglOK()) { viewerBusy = false; vFallback('WebGL is not available on this device.'); return; }
+  try { await loadScript(SRC.three); await loadScript(SRC.controls); if (p.modelUrl) await loadScript(SRC.gltf); }
+  catch (e) { viewerBusy = false; vFallback('The 3D viewer could not be loaded.'); return; }
+  if (curProject !== p || !$('#v-stage')) { viewerBusy = false; return; }
+  const THREE = window.THREE, stage = $('#v-stage'), poster = $('#v-poster');
+  const canvas = document.createElement('canvas');
+  canvas.tabIndex = 0;
+  canvas.setAttribute('aria-label', 'Interactive 3D viewer for ' + p.title + '. Arrow keys orbit, plus and minus zoom, R resets the camera.');
+  let renderer;
+  try { renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, powerPreference: 'low-power' }); }
+  catch (e) { viewerBusy = false; vFallback('A WebGL context could not be created.'); return; }
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));   // budget: pixel ratio <= 1.5
+  renderer.outputEncoding = THREE.sRGBEncoding;
+  const scene = new THREE.Scene(); scene.background = new THREE.Color(0x0d0e12);
+  const camera = new THREE.PerspectiveCamera(40, 16 / 9, 0.05, 200);
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x1b1d28, 0.9));
+  const key = new THREE.DirectionalLight(0xffffff, 1.2); key.position.set(3, 4, 2.5); scene.add(key);
+  const rim = new THREE.DirectionalLight(0xff9a3c, 0.7); rim.position.set(-3, 2, -3); scene.add(rim);
+  const controls = new THREE.OrbitControls(camera, canvas);
+  controls.enablePan = false; controls.enableDamping = false;
+  let root = null, home = new THREE.Vector3(), tgt = new THREE.Vector3(), lost = false, visible = true, raf = 0, dead = false;
+
+  const render = () => { if (raf || !visible || lost || dead) return; raf = requestAnimationFrame(() => { raf = 0; if (!dead) renderer.render(scene, camera); }); };
+  const fit = obj => {
+    const box = new THREE.Box3().setFromObject(obj), size = box.getSize(new THREE.Vector3()), ctr = box.getCenter(new THREE.Vector3());
+    const d = Math.max(size.x, size.y, size.z) / (2 * Math.tan(camera.fov * Math.PI / 360)) * 1.7;
+    tgt.copy(ctr); home.set(ctr.x + d * 0.6, ctr.y + d * 0.35, ctr.z + d * 0.85);
+    camera.near = d / 100; camera.far = d * 20; camera.updateProjectionMatrix();
+    controls.minDistance = d * 0.4; controls.maxDistance = d * 3;
+    reset();
+  };
+  const reset = () => { camera.position.copy(home); controls.target.copy(tgt); camera.lookAt(tgt); controls.update(); render(); };
+  const resize = () => { const w = stage.clientWidth, h = stage.clientHeight; if (!w || !h) return; renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); render(); };
+  const onKey = e => {
+    const step = 0.12, off = camera.position.clone().sub(controls.target), sph = new THREE.Spherical().setFromVector3(off); let used = true;
+    switch (e.key) {
+      case 'ArrowLeft': sph.theta -= step; break; case 'ArrowRight': sph.theta += step; break;
+      case 'ArrowUp': sph.phi = Math.max(0.1, sph.phi - step); break; case 'ArrowDown': sph.phi = Math.min(Math.PI - 0.1, sph.phi + step); break;
+      case '+': case '=': sph.radius = Math.max(controls.minDistance, sph.radius * 0.9); break;
+      case '-': case '_': sph.radius = Math.min(controls.maxDistance, sph.radius * 1.1); break;
+      case '0': case 'r': case 'R': e.preventDefault(); reset(); return;
+      default: used = false;
+    }
+    if (!used) return;
+    e.preventDefault(); off.setFromSpherical(sph); camera.position.copy(controls.target).add(off); camera.lookAt(controls.target); controls.update(); render();
+  };
+  const onLost = e => { e.preventDefault(); lost = true; canvas.hidden = true; poster.hidden = false; vStatus('The graphics context was lost. Showing the still image. Press Back to still, then View in 3D to retry.'); };
+  const onRestored = () => { lost = false; canvas.hidden = false; poster.hidden = true; vStatus('The 3D viewer recovered.'); resize(); };
+  const io = new IntersectionObserver(en => { visible = en[0].isIntersecting; if (visible) render(); }, { threshold: 0.05 });
+  const ro = new ResizeObserver(resize);
+  controls.addEventListener('change', render);
+  canvas.addEventListener('keydown', onKey);
+  canvas.addEventListener('webglcontextlost', onLost);
+  canvas.addEventListener('webglcontextrestored', onRestored);
+
+  const teardown = () => {
+    dead = true; cancelAnimationFrame(raf); io.disconnect(); ro.disconnect();
+    controls.removeEventListener('change', render); controls.dispose();
+    canvas.removeEventListener('keydown', onKey); canvas.removeEventListener('webglcontextlost', onLost); canvas.removeEventListener('webglcontextrestored', onRestored);
+    scene.traverse(o => {
+      if (o.geometry) o.geometry.dispose();
+      const mats = o.material ? (Array.isArray(o.material) ? o.material : [o.material]) : [];
+      mats.forEach(m => { Object.keys(m).forEach(k => { if (m[k] && m[k].isTexture) m[k].dispose(); }); m.dispose(); });
+    });
+    renderer.dispose(); try { renderer.forceContextLoss(); } catch (e) {}
+    canvas.remove(); viewer = null;
+  };
+
+  const mount = () => {
+    stage.appendChild(canvas); poster.hidden = true;
+    io.observe(stage); ro.observe(stage); resize();
+    viewer = { teardown: teardown, reset: reset, canvas: canvas };
+    viewerBusy = false; openBtn.hidden = true; openBtn.disabled = false;
+    $('#v-reset').hidden = false; $('#v-close').hidden = false; $('#v-keys').hidden = false;
+    canvas.focus();
+  };
+  if (p.modelUrl) {
+    new THREE.GLTFLoader().load(p.modelUrl, g => {
+      if (dead) return; root = g.scene;
+      root.traverse(o => { if (o.material) { const ms = Array.isArray(o.material) ? o.material : [o.material]; ms.forEach(m => { if (m.map) m.map.anisotropy = 1; }); } });
+      scene.add(root); fit(root); mount(); vStatus('Model loaded. Drag, or use the keyboard, to inspect it.');
+    }, undefined, () => { teardown(); viewerBusy = false; vFallback('The model file could not be loaded.'); });
+  } else {
+    root = new THREE.Mesh(new THREE.TorusKnotGeometry(1, 0.32, 160, 24), new THREE.MeshStandardMaterial({ color: 0xb9b6b0, roughness: 0.5, metalness: 0.15 }));
+    scene.add(root); fit(root); mount();
+    vStatus('Showing placeholder geometry. Set modelUrl for this project in CONFIG to load your approved GLB.');
+  }
+}
+function stopViewer() {
+  if (viewer) viewer.teardown();
+  viewerBusy = false;
+}
+
+/* ---------- about / resources / contact ---------- */
+function renderAbout() {
+  const c = CONFIG, av = { title: 'rapitn', hue: 24, kind: 'orb' };
+  $('#view-about').innerHTML = '<div class="wrap"><div class="page-head"><span class="eyebrow mono">About</span><h1>Hello, I\'m rapitn.</h1></div>' +
+    '<div class="about"><div><div class="avatar">' + art(av, 'final', 1) + '</div><p class="muted mono" style="margin-top:.6rem">Replace with your photo</p></div>' +
+    '<div class="prose">' + c.bio.map(t => '<p>' + t + '</p>').join('') + '<p style="margin-top:1.4rem"><span class="mono muted">Available for</span></p><p style="margin-top:.5rem;display:flex;gap:.5rem;flex-wrap:wrap">' + c.availableFor.map(a => '<span class="pill"><span class="dot"></span>' + a + '</span>').join('') + '</p></div></div>' +
+    '<div class="cols"><section><h2>Software</h2><ul class="prof">' + c.software.map(s => '<li><div class="row"><span>' + s.name + '</span><span class="muted mono">' + s.tag + '</span></div><div class="bar" role="img" aria-label="' + s.name + ' proficiency ' + s.level + ' percent"><i style="width:' + s.level + '%"></i></div></li>').join('') + '</ul></section>' +
+    '<section><h2>Hardware</h2><dl class="spec">' + c.hardware.map(h => '<div><dt>' + h[0] + '</dt><dd>' + h[1] + '</dd></div>').join('') + '</dl></section>' +
+    '<section><h2>Currently exploring</h2><ul class="prof">' + c.learning.map(l => '<li><div class="row"><span>' + l + '</span></div></li>').join('') + '</ul></section></div>' +
+    '<section style="margin-top:3.5rem"><h2 style="font-size:1.6rem;margin-bottom:1.2rem">Process</h2><ol class="steps">' + c.process.map(s => '<li><span class="mono">' + s[0] + '</span><span class="muted">' + s[1] + '</span></li>').join('') + '</ol></section></div>';
+}
+function renderResources() {
+  const r = CONFIG.resources, list = (t, a) => '<section><h2 style="font-size:1.25rem;margin-bottom:.6rem">' + t + '</h2><ul class="rl">' + a.map(x => '<li><span>' + x[0] + '</span><small>' + x.slice(1).join(' &middot; ') + '</small></li>').join('') + '</ul></section>';
+  $('#view-resources').innerHTML = '<div class="wrap"><div class="page-head"><span class="eyebrow mono">Resources</span><h1>Free models, tutorials and notes</h1></div><p class="muted" style="max-width:40rem">Sample entries. Add a url to each item in CONFIG and it becomes a link.</p>' +
+    '<div class="cols">' + list('Free 3D models', r.models) + list('Tutorials', r.tutorials) + list('Blog posts', r.posts) + '</div>' +
+    '<div class="budget"><h2>Asset budget for the interactive viewer</h2><ul><li>GLB under 5 MB, Draco or Meshopt compressed, under 100k triangles.</li><li>Textures capped at 2048 px, KTX2 where possible.</li><li>Pixel ratio capped at 1.5. Rendering happens on demand and stops when the viewer is off-screen.</li><li>Geometry, materials, textures and listeners are disposed when you press Back to still or leave the page.</li><li>Test on a low-powered phone, and with WebGL disabled, before publishing.</li></ul></div></div>';
+}
+function renderContact() {
+  const c = CONFIG;
+  $('#view-contact').innerHTML = '<div class="wrap"><div class="page-head"><span class="eyebrow mono">Contact</span><h1>Let\'s make something.</h1></div>' +
+    '<div class="contact-grid"><section><p class="mono muted">Email for inquiries</p><p class="mail" id="mail">' + c.email + '</p><button class="btn small" type="button" data-act="copy-mail">Copy address</button> <span class="muted" id="copied" role="status" aria-live="polite"></span>' +
+    '<p style="margin-top:1.8rem"><span class="pill"><span class="dot" style="background:' + (c.status.open ? 'var(--accent)' : 'var(--muted)') + '"></span>' + c.status.label + '</span></p><p class="muted" style="margin-top:.7rem;max-width:26rem">' + c.status.note + '</p></section>' +
+    '<section><p class="mono muted" style="margin-bottom:.4rem">Elsewhere</p><ul class="soc">' + c.socials.map(s => '<li><span>' + s.name + '</span>' + (s.url ? '<a href="' + s.url + '" target="_blank" rel="noopener">' + s.handle + ' &#8599;</a>' : '<span class="muted">' + s.handle + ' (add link)</span>') + '</li>').join('') + '</ul></section></div></div>';
+}
+
+/* ---------- showreel modal ---------- */
+const reel = $('#reel'); let rTimer = 0, rT = 0, rIdx = -1, rPlay = false, rOpener = null;
+const spp = CONFIG.reel.secondsPerProject, rTotal = spp * CONFIG.projects.length;
+const tc = t => { const s = Math.floor(t), f = Math.floor((t - s) * 24); return '00:00:' + String(s).padStart(2, '0') + ':' + String(f).padStart(2, '0'); };
+function buildReel() {
+  $('#reel-list').innerHTML = CONFIG.projects.map((p, i) => '<li><button type="button" data-act="reel-jump" data-i="' + i + '" aria-current="false"><span>' + p.title + '</span><small>' + p.cat.split(' ')[0] + '</small></button></li>').join('');
+  $('#reel-total').textContent = tc(rTotal);
+  const ext = $('#reel-ext'); if (CONFIG.reel.externalUrl) { ext.href = CONFIG.reel.externalUrl; ext.hidden = false; }
+}
+function reelFrame(i) {
+  if (i === rIdx) return; rIdx = i;
+  const stage = $('#reel-stage'), hud = stage.querySelector('.reel-hud');
+  const old = stage.querySelector('svg'); if (old) old.remove();
+  stage.insertAdjacentHTML('afterbegin', art(CONFIG.projects[i], 'final', i * 2));
+  if (!hud) stage.insertAdjacentHTML('beforeend', '<span class="reel-hud" id="reel-tc"></span>');
+  $$('#reel-list button').forEach((b, j) => b.setAttribute('aria-current', String(j === i)));
+}
+function reelTick() {
+  rT += 0.1; if (rT >= rTotal) rT = 0;
+  reelFrame(Math.floor(rT / spp));
+  $('#reel-tc').textContent = tc(rT) + ' / ' + CONFIG.projects[rIdx].title;
+  $('#reel-prog').style.width = (rT / rTotal * 100) + '%';
+}
+function reelSet(play) {
+  rPlay = play; clearInterval(rTimer); rTimer = 0;
+  if (play) rTimer = setInterval(reelTick, 100);
+  const b = $('#reel-toggle'); b.textContent = play ? 'Pause' : 'Play'; b.setAttribute('aria-label', play ? 'Pause showreel' : 'Play showreel');
+}
+function openReel(opener) {
+  rOpener = opener; const stage = $('#reel-stage'); stage.innerHTML = ''; rIdx = -1; rT = 0;
+  const R = CONFIG.reel;
+  if (R.embedUrl) {
+    stage.innerHTML = '<iframe title="Showreel" src="' + R.embedUrl + (R.embedUrl.includes('?') ? '&' : '?') + 'autoplay=1" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>';
+    $('#reel-ctl').hidden = true;
+  } else if (R.videoSrc) {
+    stage.innerHTML = '<video src="' + R.videoSrc + '" autoplay muted playsinline controls></video>';
+    $('#reel-ctl').hidden = true;
+  } else {
+    $('#reel-ctl').hidden = false; reelFrame(0); reelTick(); rT = 0;
+    reelSet(!RM.matches);   // autoplays on open unless the visitor prefers reduced motion
+  }
+  if (!reel.open) reel.showModal();
+}
+function closeReel() { reelSet(false); $('#reel-stage').innerHTML = ''; if (reel.open) reel.close(); }
+reel.addEventListener('close', () => { reelSet(false); $('#reel-stage').innerHTML = ''; });
+reel.addEventListener('click', e => { if (e.target === reel) closeReel(); });
+$('#reel-close').addEventListener('click', closeReel);
+
+/* ---------- router ---------- */
+let homeTimer = 0;
+function route() {
+  const h = (location.hash || '').slice(1); stopViewer();
+  if (turnTimer) { clearInterval(turnTimer); turnTimer = 0; }
+  let view = 'home', scrollTo = null, nav = '';
+  if (h.startsWith('project-') && bySlug(h.slice(8))) { view = 'project'; nav = 'work'; }
+  else if (h === 'about' || h === 'resources' || h === 'contact') { view = h; nav = h; }
+  else if (h === 'work') { scrollTo = '#work-grid'; nav = 'work'; }
+  $$('[data-view]').forEach(v => v.hidden = v.dataset.view !== view);
+  $$('nav.main a').forEach(a => a.removeAttribute('aria-current'));
+  if (nav) { const a = $('nav.main a[data-nav="' + nav + '"]'); if (a) a.setAttribute('aria-current', 'page'); }
+  if (view === 'project') renderProject(bySlug(h.slice(8)));
+  if (view === 'about') renderAbout();
+  if (view === 'resources') renderResources();
+  if (view === 'contact') renderContact();
+  clearInterval(homeTimer); homeTimer = 0;
+  if (view === 'home' && !RM.matches) { let f = 1; homeTimer = setInterval(() => { f = f % 240 + 1; $('#frame').textContent = String(f).padStart(4, '0'); }, 83); }
+  if (scrollTo) { requestAnimationFrame(() => $(scrollTo).scrollIntoView({ behavior: RM.matches ? 'auto' : 'smooth', block: 'start' })); }
+  else window.scrollTo(0, 0);
+}
+window.addEventListener('hashchange', route);
+
+/* ---------- events ---------- */
+document.addEventListener('click', e => {
+  const t = e.target.closest('[data-act]'); if (!t) return;
+  const a = t.dataset.act;
+  if (a === 'open-reel') openReel(t);
+  else if (a === 'explore') $('#work-grid').scrollIntoView({ behavior: RM.matches ? 'auto' : 'smooth', block: 'start' });
+  else if (a === 'filter') { activeCat = t.dataset.cat; renderFilters(); renderGrid(); const b = $('#filters [aria-pressed="true"]'); if (b) b.focus(); }
+  else if (a === 'wip') selectTab(t);
+  else if (a === 'turn') toggleTurn();
+  else if (a === 'v-open') startViewer(curProject);
+  else if (a === 'v-reset') { if (viewer) { viewer.reset(); viewer.canvas.focus(); } }
+  else if (a === 'v-close') { stopViewer(); $('#v-poster').hidden = false; $('#v-open').hidden = false; $('#v-open').disabled = false; $('#v-reset').hidden = true; $('#v-close').hidden = true; $('#v-keys').hidden = true; vStatus('Back to the still image.'); $('#v-open').focus(); }
+  else if (a === 'copy-mail') copyMail();
+  else if (a === 'reel-jump') { rT = +t.dataset.i * spp; rIdx = -1; reelTick(); }
+  else if (a === 'reel-toggle') reelSet(!rPlay);
+});
+$('#reel-toggle').addEventListener('click', () => reelSet(!rPlay));
+$('#skip').addEventListener('click', () => { $('#main').focus(); $('#main').scrollIntoView(); });
+function selectTab(t) {
+  $$('.tabs [role="tab"]').forEach(b => { const on = b === t; b.setAttribute('aria-selected', on); b.tabIndex = on ? 0 : -1; $('#panel-' + b.dataset.m).hidden = !on; });
+}
+document.addEventListener('keydown', e => {
+  const t = e.target.closest && e.target.closest('.tabs [role="tab"]'); if (!t) return;
+  const tabs = $$('.tabs [role="tab"]'), i = tabs.indexOf(t); let n = -1;
+  if (e.key === 'ArrowRight') n = (i + 1) % tabs.length; else if (e.key === 'ArrowLeft') n = (i + tabs.length - 1) % tabs.length; else if (e.key === 'Home') n = 0; else if (e.key === 'End') n = tabs.length - 1;
+  if (n > -1) { e.preventDefault(); selectTab(tabs[n]); tabs[n].focus(); }
+});
+function copyMail() {
+  const done = ok => { $('#copied').textContent = ok ? 'Copied' : 'Select the address above and copy it.'; };
+  try { navigator.clipboard.writeText(CONFIG.email).then(() => done(true), () => { selRange(); done(false); }); } catch (e) { selRange(); done(false); }
+}
+function selRange() { const r = document.createRange(); r.selectNodeContents($('#mail')); const s = getSelection(); s.removeAllRanges(); s.addRange(r); }
+
+/* ---------- boot ---------- */
+buildReel(); renderFilters(); renderGrid(); route();
+</script>
